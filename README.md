@@ -19,6 +19,9 @@ to a rigged character as selectable Blender Actions.
 - Run UniMate inference on an NVIDIA GPU without installing PyTorch into Blender.
 - Load the smaller EMA SafeTensors inference weights.
 - Automatically import generated motion as a new Blender Action.
+- Choose the target character armature from a scene-aware dropdown.
+- Choose common motion prompts from the Action dropdown, or use Custom.
+- List only skeleton keys actually available in the selected `cond.npy`.
 - Select any generated action from a dropdown.
 - Apply, play, stop, and return to the first frame from the sidebar.
 - Preserve the character's existing actions.
@@ -146,7 +149,8 @@ Set these paths:
 - **Conditioning:** copied `dataset/features/custom/cond.npy`.
 - **Skeleton:** `littleKrishna` for the bundled example.
 
-Select the character armature, enter a prompt and action name, and press
+Choose the scene rig under **Character**, select an **Action** preset (or
+**Custom**), choose a **Conditioned Skeleton**, and press
 **Generate UniMate Motion**. The first run also downloads
 `google/flan-t5-base`, so it takes longer.
 
@@ -165,7 +169,13 @@ cannot be used by changing only the skeleton text field.
    included experiment supports up to 61 padded joints; the example uses a
    22-joint Mixamo-style core.
 4. Point the add-on to the new conditioning file and matching experiment config.
-5. Use the exact conditioning dictionary key in **Skeleton**.
+5. Select its key from **Conditioned Skeleton**. The dropdown is populated
+   directly from `cond.npy`.
+
+The **Character** dropdown and **Conditioned Skeleton** dropdown serve different
+purposes. Character is the Blender armature that receives keyframes. Conditioned
+Skeleton is the preprocessed UniMate data used during inference. Renaming an
+armature does not create compatible conditioning data.
 
 Finger/helper bones may need pruning or weight merging before preprocessing.
 Always keep a backup of the original character.

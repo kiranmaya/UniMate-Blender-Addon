@@ -29,6 +29,11 @@ Release: <https://github.com/kiranmaya/UniMate-Blender-Addon/releases/tag/v0.1.0
 6. Generate motion.
 7. Choose a generated Action, apply it to the armature, and play it.
 
+The Blender UI provides three separate selectors: a scene-aware Character
+armature dropdown, a motion Action preset dropdown, and a Conditioned Skeleton
+dropdown populated from the configured `cond.npy`. This prevents Blender object
+names from being mistaken for UniMate conditioning keys.
+
 Generated runs retain the prompt, seed, source-motion path, log, and timing.
 
 ## Architecture
@@ -119,4 +124,3 @@ and initialized.
 - Preserve the separate demo-asset notice.
 - Re-test SafeTensors loading after UniMate or Blender upgrades.
 - Update system requirements with each supported GPU/Blender version.
-

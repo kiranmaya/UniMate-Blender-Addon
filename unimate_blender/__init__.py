@@ -1,7 +1,7 @@
 bl_info = {
     "name": "UniMate Motion Generator",
     "author": "Kiran + Codex",
-    "version": (0, 1, 0),
+    "version": (0, 2, 0),
     "blender": (5, 2, 0),
     "location": "View3D > Sidebar > UniMate",
     "description": "Generate text-conditioned UniMate motion and apply it as a Blender action",
@@ -20,6 +20,34 @@ import bpy
 
 
 DEFAULT_ROOT = os.environ.get("UNIMATE_ROOT", "")
+
+MOTION_PRESETS = (
+    ("CUSTOM", "Custom", "Write your own motion prompt"),
+    ("WALK", "Walk", "A human walks naturally forward"),
+    ("RUN", "Run", "A human runs naturally forward"),
+    ("DANCE", "Dance", "A human performs an energetic dance"),
+    ("JUMP", "Jump", "A human jumps upward and lands safely"),
+    ("BACKFLIP", "Backflip", "A human performs a backflip and lands safely"),
+    ("WAVE", "Wave", "A human waves with one hand"),
+    ("IDLE", "Idle", "A human stands with subtle idle movement"),
+    ("CROUCH", "Crouch", "A human crouches down and stands up"),
+    ("SIT", "Sit", "A human sits down naturally"),
+)
+
+PRESET_PROMPTS = {
+    "WALK": "a human walks naturally forward",
+    "RUN": "a human runs naturally forward",
+    "DANCE": "a human performs an energetic dance",
+    "JUMP": "a human jumps upward and lands safely",
+    "BACKFLIP": "a human performs a backflip and lands safely",
+    "WAVE": "a human waves with one hand",
+    "IDLE": "a human stands with subtle idle movement",
+    "CROUCH": "a human crouches down and stands up",
+    "SIT": "a human sits down naturally",
+}
+
+_ARMATURE_ITEM_CACHE = []
+_SKELETON_ITEM_CACHE = []
 
 
 def _paths(scene):
@@ -44,6 +72,10 @@ def _safe_name(value):
 
 
 def _active_armature(context):
+    selected = getattr(context.scene, "unimate_target_armature", "")
+    selected_obj = context.scene.objects.get(selected) if selected else None
+    if selected_obj and selected_obj.type == "ARMATURE":
+        return selected_obj
     obj = context.active_object
     if obj and obj.type == "ARMATURE":
         return obj
@@ -51,6 +83,45 @@ def _active_armature(context):
         return obj.find_armature()
     armatures = [o for o in context.scene.objects if o.type == "ARMATURE"]
     return armatures[0] if len(armatures) == 1 else None
+
+
+def _armature_items(_self, context):
+    global _ARMATURE_ITEM_CACHE
+    if context is None:
+        return [("__NONE__", "No armatures", "Import or select a rigged character")]
+    armatures = sorted(
+        (obj for obj in context.scene.objects if obj.type == "ARMATURE"),
+        key=lambda obj: obj.name.lower(),
+    )
+    _ARMATURE_ITEM_CACHE = (
+        [(obj.name, obj.name, f"Use {obj.name} as the animation target") for obj in armatures]
+        or [("__NONE__", "No armatures", "Import or select a rigged character")]
+    )
+    return _ARMATURE_ITEM_CACHE
+
+
+def _skeleton_items(self, _context):
+    global _SKELETON_ITEM_CACHE
+    try:
+        import numpy as np
+        cond_path = bpy.path.abspath(self.unimate_cond)
+        keys = sorted(np.load(cond_path, allow_pickle=True).item().keys())
+        _SKELETON_ITEM_CACHE = [
+            (key, key, f"Conditioning data for {key}") for key in keys
+        ]
+    except Exception:
+        _SKELETON_ITEM_CACHE = []
+    return _SKELETON_ITEM_CACHE or [
+        ("__NONE__", "No conditioned skeletons", "Choose a valid cond.npy file")
+    ]
+
+
+def _motion_preset_changed(self, _context):
+    preset = self.unimate_motion_preset
+    if preset == "CUSTOM":
+        return
+    self.unimate_prompt = PRESET_PROMPTS[preset]
+    self.unimate_action_name = preset.title()
 
 
 def _generated_action_items(_self, _context):
@@ -153,6 +224,19 @@ class UNIMATE_OT_generate(bpy.types.Operator):
             return {"CANCELLED"}
         if not scene.unimate_prompt.strip():
             self.report({"ERROR"}, "Enter an animation prompt")
+            return {"CANCELLED"}
+        try:
+            import numpy as np
+            cond_keys = sorted(np.load(paths["cond"], allow_pickle=True).item())
+        except Exception as exc:
+            self.report({"ERROR"}, f"Cannot read conditioning file: {exc}")
+            return {"CANCELLED"}
+        if scene.unimate_object_type not in cond_keys:
+            self.report(
+                {"ERROR"},
+                f"Skeleton '{scene.unimate_object_type}' is unavailable. "
+                f"Use: {', '.join(cond_keys)}",
+            )
             return {"CANCELLED"}
 
         stamp = time.strftime("%Y%m%d_%H%M%S")
@@ -285,11 +369,14 @@ class UNIMATE_PT_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        layout.prop(scene, "unimate_target_armature", text="Character")
+        layout.prop(scene, "unimate_motion_preset", text="Action")
         layout.prop(scene, "unimate_prompt")
         row = layout.row(align=True)
-        row.prop(scene, "unimate_action_name")
+        row.prop(scene, "unimate_action_name", text="Action Name")
         row.prop(scene, "unimate_seed")
-        layout.prop(scene, "unimate_object_type")
+        layout.prop(scene, "unimate_object_type", text="Conditioned Skeleton")
+        layout.label(text="Character rig and conditioning are selected separately.", icon="INFO")
         layout.prop(scene, "unimate_auto_import")
         layout.operator("unimate.generate", icon="PLAY")
         layout.operator("unimate.import_last", icon="ACTION")
@@ -333,11 +420,25 @@ def register():
         name="Prompt", default="A child waves happily and takes two steps forward"
     )
     bpy.types.Scene.unimate_action_name = bpy.props.StringProperty(
-        name="Action", default="Generated_Motion"
+        name="Action Name", default="Generated_Motion"
+    )
+    bpy.types.Scene.unimate_motion_preset = bpy.props.EnumProperty(
+        name="Action",
+        description="Motion prompt preset",
+        items=MOTION_PRESETS,
+        default="CUSTOM",
+        update=_motion_preset_changed,
     )
     bpy.types.Scene.unimate_seed = bpy.props.IntProperty(name="Seed", default=10, min=0)
-    bpy.types.Scene.unimate_object_type = bpy.props.StringProperty(
-        name="Skeleton", default="littleKrishna"
+    bpy.types.Scene.unimate_target_armature = bpy.props.EnumProperty(
+        name="Character",
+        description="Armature in this scene that receives the generated animation",
+        items=_armature_items,
+    )
+    bpy.types.Scene.unimate_object_type = bpy.props.EnumProperty(
+        name="Conditioned Skeleton",
+        description="Skeleton contained in the selected UniMate cond.npy",
+        items=_skeleton_items,
     )
     bpy.types.Scene.unimate_auto_import = bpy.props.BoolProperty(
         name="Import automatically", default=True
@@ -380,8 +481,8 @@ def register():
 
 def unregister():
     for name in (
-        "unimate_prompt", "unimate_action_name", "unimate_seed",
-        "unimate_object_type", "unimate_auto_import", "unimate_root", "unimate_python",
+        "unimate_prompt", "unimate_action_name", "unimate_motion_preset", "unimate_seed",
+        "unimate_target_armature", "unimate_object_type", "unimate_auto_import", "unimate_root", "unimate_python",
         "unimate_experiment", "unimate_model", "unimate_cond", "unimate_last_motion",
         "unimate_last_output", "unimate_last_seconds", "unimate_status",
         "unimate_selected_action",
