@@ -147,7 +147,33 @@ Set these paths:
 - **Experiment:** `UniMate/outputs/littleKrishna_unimate`.
 - **SafeTensors:** downloaded `model_ema.safetensors`.
 - **Conditioning:** copied `dataset/features/custom/cond.npy`.
-- **Skeleton:** `littleKrishna` for the bundled example.
+- **UniMate Skeleton:** choose the available prepared skeleton profile.
+
+### Action, Prompt, and Action Name
+
+- **Action** is a convenience preset. Choosing **Walk**, **Run**, **Dance**,
+  **Jump**, **Backflip**, **Wave**, **Idle**, **Crouch**, or **Sit** fills in a
+  suitable prompt and action name automatically.
+- **Prompt** tells UniMate what movement to generate. Be direct and describe
+  one motion, for example: `a human runs forward and stops naturally`. You can
+  edit the generated preset prompt before starting inference.
+- **Action Name** is the name assigned to the resulting Blender Action. Use a
+  short descriptive name such as `Fast_Run`, `Happy_Wave`, or `Backflip`.
+  Blender displays the imported result with the `UniMate_` prefix, for example
+  `UniMate_Fast_Run`.
+
+For a motion that is not in the preset list, choose **Custom**, write the
+desired movement in **Prompt**, and enter a unique **Action Name**. Then press
+**Generate UniMate Motion**. Changing Action Name organizes the Blender actions;
+it does not change the generated movement—the Prompt controls the movement.
+
+Example:
+
+```text
+Action:      Custom
+Prompt:      a human takes two steps forward and waves with the right hand
+Action Name: Walk_And_Wave
+```
 
 Choose the scene rig under **Character**, select an **Action** preset (or
 **Custom**), choose a **UniMate Skeleton**, and press
@@ -173,8 +199,8 @@ cannot be used by changing only the skeleton text field.
    directly from `cond.npy`.
 
 The **Character** dropdown and **UniMate Skeleton** dropdown serve different
-purposes. Character is the Blender armature that receives keyframes. Conditioned
-UniMate Skeleton is the preprocessed rig data used during inference. Renaming an
+purposes. Character is the Blender armature that receives keyframes. UniMate
+Skeleton is the preprocessed rig data used during inference. Renaming an
 armature does not create compatible conditioning data.
 
 Finger/helper bones may need pruning or weight merging before preprocessing.
