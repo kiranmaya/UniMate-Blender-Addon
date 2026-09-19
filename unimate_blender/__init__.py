@@ -1,7 +1,7 @@
 bl_info = {
     "name": "UniMate Motion Generator",
     "author": "Kiran + Codex",
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "blender": (5, 2, 0),
     "location": "View3D > Sidebar > UniMate",
     "description": "Generate text-conditioned UniMate motion and apply it as a Blender action",
@@ -107,7 +107,12 @@ def _skeleton_items(self, _context):
         cond_path = bpy.path.abspath(self.unimate_cond)
         keys = sorted(np.load(cond_path, allow_pickle=True).item().keys())
         _SKELETON_ITEM_CACHE = [
-            (key, key, f"Conditioning data for {key}") for key in keys
+            (
+                key,
+                "UniMate Skeleton" if key == "littleKrishna" else key,
+                f"UniMate skeleton profile ({key})",
+            )
+            for key in keys
         ]
     except Exception:
         _SKELETON_ITEM_CACHE = []
@@ -375,7 +380,7 @@ class UNIMATE_PT_panel(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(scene, "unimate_action_name", text="Action Name")
         row.prop(scene, "unimate_seed")
-        layout.prop(scene, "unimate_object_type", text="Conditioned Skeleton")
+        layout.prop(scene, "unimate_object_type", text="UniMate Skeleton")
         layout.label(text="Character rig and conditioning are selected separately.", icon="INFO")
         layout.prop(scene, "unimate_auto_import")
         layout.operator("unimate.generate", icon="PLAY")
@@ -436,7 +441,7 @@ def register():
         items=_armature_items,
     )
     bpy.types.Scene.unimate_object_type = bpy.props.EnumProperty(
-        name="Conditioned Skeleton",
+        name="UniMate Skeleton",
         description="Skeleton contained in the selected UniMate cond.npy",
         items=_skeleton_items,
     )

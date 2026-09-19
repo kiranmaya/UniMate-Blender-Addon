@@ -30,7 +30,7 @@ Release: <https://github.com/kiranmaya/UniMate-Blender-Addon/releases/tag/v0.1.0
 7. Choose a generated Action, apply it to the armature, and play it.
 
 The Blender UI provides three separate selectors: a scene-aware Character
-armature dropdown, a motion Action preset dropdown, and a Conditioned Skeleton
+armature dropdown, a motion Action preset dropdown, and a UniMate Skeleton
 dropdown populated from the configured `cond.npy`. This prevents Blender object
 names from being mistaken for UniMate conditioning keys.
 
