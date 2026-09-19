@@ -1,0 +1,113 @@
+{
+    "experiment": {
+        "name": "uniml3d_60frames_graph_adaln",
+        "output_dir": "./outputs/uniml3d_60frames_graph_adaln"
+    },
+    "truebones": {
+        "type": "truebones",
+        "path": "dataset/features/truebones",
+        "objects_subset": "all"
+    },
+    "mixamo": {
+        "type": "mixamo",
+        "path": "dataset/features/mixamo"
+    },
+    "objaverse": {
+        "type": "objaverse",
+        "path": "dataset/features/custom",
+        "objects_num": -1,
+        "filter_object": false
+    },
+    "dataset": {
+        "dataset_list": [
+            "objaverse"
+        ],
+        "topology_condition_type": "tpos",
+        "motion_repr": "unimate",
+        "max_motion_length": 60,
+        "max_joints": 61,
+        "min_joints": 5,
+        "max_depth": 19,
+        "feature_len": 12,
+        "use_dataset_stats": true,
+        "balanced_stats": true,
+        "tie_std": false,
+        "sampler_alpha": 0.5,
+        "test_split_ratio": 0.0,
+        "split_seed": 42,
+        "use_addition_aug": true,
+        "use_removal_aug": true,
+        "use_pooling_aug": true,
+        "use_perturbation_aug": true,
+        "ground_motion_height": true,
+        "realign_feature": true
+    },
+    "model": {
+        "attention": "graph",
+        "text_cond": "adaln",
+        "latent_dim": 512,
+        "ff_size": 2048,
+        "num_layers": 10,
+        "num_heads": 8,
+        "dropout": 0.0,
+        "use_spectral_rope": true,
+        "max_freqs": 8,
+        "use_signnet": true,
+        "cond_mode": "text",
+        "cond_mask_prob": 0.1,
+        "use_joint_name_emb": true,
+        "use_graph_emb": false,
+        "use_depth_emb": true,
+        "concat_parent_features": true,
+        "num_tpos_queries": 4,
+        "inject_tpos_to_adaln": true,
+        "use_graph_attn_bias": true,
+        "share_graph_attn_bias": false,
+        "gradient_checkpointing": false,
+        "text_encoder_type": "t5",
+        "text_encoder_version": "google/flan-t5-base"
+    },
+    "scheduler": {
+        "diffusion_steps": 100,
+        "timestep_respacing": "",
+        "rescale_timesteps": false,
+        "noise_schedule": "cosine",
+        "scale_beta": 1.0,
+        "predict_xstart": true,
+        "learn_sigma": false,
+        "sigma_small": true
+    },
+    "training": {
+        "batch_size": 16,
+        "num_workers": 8,
+        "seed": 10,
+        "diff_model": "flow",
+        "learning_rate": 0.0001,
+        "weight_decay": 1e-05,
+        "adam_beta1": 0.9,
+        "adam_beta2": 0.99,
+        "max_grad_norm": 1.0,
+        "gradient_accumulation_steps": 1,
+        "warmup_ratio": 0.03,
+        "min_lr_ratio": 0.05,
+        "num_epochs": null,
+        "num_steps": 120000,
+        "log_interval": 50,
+        "save_interval": 10000,
+        "lambda_geo": 0.5,
+        "lambda_smooth": 0.1,
+        "use_ema": true,
+        "ema_decay": 0.9999,
+        "balanced": true
+    },
+    "sampling": {
+        "model_path": null,
+        "output_dir": null,
+        "seed": 10,
+        "object_type": null,
+        "num_samples": 2,
+        "num_repetitions": 3,
+        "device": "cuda",
+        "cfg_scale": 3.0
+    }
+}
