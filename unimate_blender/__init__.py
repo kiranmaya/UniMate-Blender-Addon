@@ -1,7 +1,7 @@
 bl_info = {
     "name": "UniMate Motion Generator",
     "author": "Kiran + Codex",
-    "version": (0, 2, 2),
+    "version": (0, 2, 3),
     "blender": (5, 2, 0),
     "location": "View3D > Sidebar > UniMate",
     "description": "Generate text-conditioned UniMate motion and apply it as a Blender action",
@@ -64,6 +64,16 @@ def _paths(scene):
         "blender_site": os.path.join(root, "blender_site"),
         "runner": os.path.join(os.path.dirname(__file__), "unimate_safetensors_runner.py"),
     }
+
+
+def _preferences():
+    addon = bpy.context.preferences.addons.get(__package__ or __name__)
+    return addon.preferences if addon else None
+
+
+def _saved_path(name, fallback=""):
+    prefs = _preferences()
+    return getattr(prefs, name, "") or fallback if prefs else fallback
 
 
 def _safe_name(value):
@@ -368,6 +378,38 @@ class UNIMATE_OT_play_toggle(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class UNIMATE_OT_save_path_defaults(bpy.types.Operator):
+    bl_idname = "unimate.save_path_defaults"
+    bl_label = "Save Paths as Defaults"
+    bl_description = "Keep these UniMate paths for new Blender scenes"
+
+    def execute(self, context):
+        prefs = _preferences()
+        if prefs is None:
+            self.report({"ERROR"}, "UniMate add-on preferences are unavailable")
+            return {"CANCELLED"}
+        scene = context.scene
+        for name in ("unimate_root", "unimate_python", "unimate_experiment",
+                     "unimate_model", "unimate_cond"):
+            setattr(prefs, name, getattr(scene, name))
+        bpy.ops.wm.save_userpref()
+        self.report({"INFO"}, "UniMate paths saved for new scenes")
+        return {"FINISHED"}
+
+
+class UNIMATE_Preferences(bpy.types.AddonPreferences):
+    bl_idname = __package__ or __name__
+
+    unimate_root: bpy.props.StringProperty(subtype="DIR_PATH")
+    unimate_python: bpy.props.StringProperty(subtype="FILE_PATH")
+    unimate_experiment: bpy.props.StringProperty(subtype="DIR_PATH")
+    unimate_model: bpy.props.StringProperty(subtype="FILE_PATH")
+    unimate_cond: bpy.props.StringProperty(subtype="FILE_PATH")
+
+    def draw(self, _context):
+        self.layout.label(text="Path defaults are saved from the UniMate sidebar.")
+
+
 class UNIMATE_PT_panel(bpy.types.Panel):
     bl_label = "UniMate"
     bl_idname = "UNIMATE_PT_panel"
@@ -411,13 +453,16 @@ class UNIMATE_PT_panel(bpy.types.Panel):
         advanced.prop(scene, "unimate_experiment")
         advanced.prop(scene, "unimate_model")
         advanced.prop(scene, "unimate_cond")
+        advanced.operator("unimate.save_path_defaults", icon="FILE_TICK")
 
 
 CLASSES = (
+    UNIMATE_Preferences,
     UNIMATE_OT_generate,
     UNIMATE_OT_import_last,
     UNIMATE_OT_apply_action,
     UNIMATE_OT_play_toggle,
+    UNIMATE_OT_save_path_defaults,
     UNIMATE_PT_panel,
 )
 
@@ -453,27 +498,35 @@ def register():
         name="Import automatically", default=True
     )
     bpy.types.Scene.unimate_root = bpy.props.StringProperty(
-        name="UniMate Root", subtype="DIR_PATH", default=DEFAULT_ROOT
+        name="UniMate Root", subtype="DIR_PATH",
+        default=_saved_path("unimate_root", DEFAULT_ROOT)
     )
     bpy.types.Scene.unimate_python = bpy.props.StringProperty(
-        name="Python", subtype="FILE_PATH", default=""
+        name="Python", subtype="FILE_PATH", default=_saved_path("unimate_python")
     )
     bpy.types.Scene.unimate_experiment = bpy.props.StringProperty(
         name="Experiment", subtype="DIR_PATH",
-        default=(os.path.join(DEFAULT_ROOT, "outputs", "littleKrishna_unimate")
-                 if DEFAULT_ROOT else ""),
+        default=_saved_path(
+            "unimate_experiment",
+            os.path.join(DEFAULT_ROOT, "outputs", "littleKrishna_unimate")
+            if DEFAULT_ROOT else "",
+        ),
     )
     bpy.types.Scene.unimate_model = bpy.props.StringProperty(
         name="SafeTensors", subtype="FILE_PATH",
-        default=(os.path.join(
-            DEFAULT_ROOT, "outputs", "uniml3d_60frames_graph_adaln",
-            "model_ema.safetensors",
-        ) if DEFAULT_ROOT else ""),
+        default=_saved_path(
+            "unimate_model",
+            os.path.join(DEFAULT_ROOT, "outputs", "uniml3d_60frames_graph_adaln",
+                         "model_ema.safetensors") if DEFAULT_ROOT else "",
+        ),
     )
     bpy.types.Scene.unimate_cond = bpy.props.StringProperty(
         name="Conditioning", subtype="FILE_PATH",
-        default=(os.path.join(DEFAULT_ROOT, "dataset", "features", "custom", "cond.npy")
-                 if DEFAULT_ROOT else ""),
+        default=_saved_path(
+            "unimate_cond",
+            os.path.join(DEFAULT_ROOT, "dataset", "features", "custom", "cond.npy")
+            if DEFAULT_ROOT else "",
+        ),
     )
     bpy.types.Scene.unimate_last_motion = bpy.props.StringProperty(
         name="Last Motion", subtype="FILE_PATH"

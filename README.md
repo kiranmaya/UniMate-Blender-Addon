@@ -149,6 +149,11 @@ Set these paths:
 - **Conditioning:** copied `dataset/features/custom/cond.npy`.
 - **UniMate Skeleton:** choose the available prepared skeleton profile.
 
+After configuring the five paths, press **Save Paths as Defaults**. The add-on
+stores them in Blender preferences and restores them as defaults for new scenes.
+Paths saved only inside a scene can otherwise appear blank when a new file is
+opened.
+
 ### Action, Prompt, and Action Name
 
 - **Action** is a convenience preset. Choosing **Walk**, **Run**, **Dance**,
