@@ -206,6 +206,44 @@ armature does not create compatible conditioning data.
 Finger/helper bones may need pruning or weight merging before preprocessing.
 Always keep a backup of the original character.
 
+### Recommended: official Mixamo profile
+
+For a standard Mixamo character, use the authors' published Mixamo export to
+build the official 22-joint conditioning profile. This avoids conditioning the
+new character with the bundled example character's proportions.
+
+From the official UniMate directory, download the small metadata files and one
+reference motion from `Linzhan/UniML3D`, then run stage 4:
+
+```bash
+hf download Linzhan/UniML3D \
+  export/mixamo/category_groups.json \
+  export/mixamo/clean_joint_names.json \
+  export/mixamo/clip_frames.json \
+  export/mixamo/face_joint_names.json \
+  export/mixamo/joint_count.json \
+  export/mixamo/joint_names.json \
+  export/mixamo/motion_captions.json \
+  export/mixamo/summary.json \
+  export/mixamo/motions/Walking.npz \
+  --repo-type dataset --local-dir dataset
+
+python -m data_process.feature_extraction.extract_features \
+  --dataset_type=mixamo \
+  --data_dir=dataset/export/mixamo \
+  --save_dir=dataset/features/mixamo \
+  --no-vis
+```
+
+Configure the add-on's **Conditioning** path as
+`dataset/features/mixamo/cond.npy`. The skeleton selector will show
+**Official Mixamo Skeleton**. Use a matching inference experiment whose config
+sets `dataset.dataset_list` to `["mixamo"]`; keep the checkpoint's original
+`dataset_stats.npy` because those statistics must match its training run.
+
+Mixamo character FBXs and animation files are not redistributed by this
+repository. Download them through Adobe Mixamo and follow Adobe's terms.
+
 ## Output layout
 
 Each run is stored under:

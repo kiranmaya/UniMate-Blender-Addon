@@ -1,7 +1,7 @@
 bl_info = {
     "name": "UniMate Motion Generator",
     "author": "Kiran + Codex",
-    "version": (0, 2, 1),
+    "version": (0, 2, 2),
     "blender": (5, 2, 0),
     "location": "View3D > Sidebar > UniMate",
     "description": "Generate text-conditioned UniMate motion and apply it as a Blender action",
@@ -109,7 +109,11 @@ def _skeleton_items(self, _context):
         _SKELETON_ITEM_CACHE = [
             (
                 key,
-                "UniMate Skeleton" if key == "littleKrishna" else key,
+                (
+                    "Official Mixamo Skeleton"
+                    if key == "mixamo"
+                    else "UniMate Skeleton" if key == "littleKrishna" else key
+                ),
                 f"UniMate skeleton profile ({key})",
             )
             for key in keys
